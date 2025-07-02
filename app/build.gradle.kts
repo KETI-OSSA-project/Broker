@@ -40,4 +40,7 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+
+    implementation("androidx.compose.ui:ui:1.6.7")
+    implementation("io.moquette:moquette-broker:0.15")
 }
