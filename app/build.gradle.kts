@@ -16,6 +16,11 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    buildFeatures {
+        // compose = true
+        dataBinding = true
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -43,4 +48,8 @@ dependencies {
 
     implementation("androidx.compose.ui:ui:1.6.7")
     implementation("io.moquette:moquette-broker:0.15")
+    implementation("androidx.preference:preference:1.2.1")
+    // implementation ("com.google.android.play:core:1.10.3")
+    implementation("com.google.android.play:app-update:2.1.0")
+    implementation("com.google.android.play:in-app-review:2.1.0")
 }
