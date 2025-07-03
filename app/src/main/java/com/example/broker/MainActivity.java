@@ -130,7 +130,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
             ConnectivityManager connectivityManager =
                 (ConnectivityManager) requireContext().getSystemService(Context.CONNECTIVITY_SERVICE);
-            connectivityManager.requestNetwork(Utils.getNetworkRequest(), new NetworkCallBack());
+            connectivityManager.requestNetwork(new NetworkRequest.Builder().build(), new NetworkCallBack());
 
             ContextCompat.registerReceiver(
                 requireContext(),
