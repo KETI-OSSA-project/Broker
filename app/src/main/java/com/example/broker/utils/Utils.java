@@ -11,6 +11,11 @@ import java.net.NetworkInterface;
 import java.util.Collections;
 import java.util.Random;
 
+/**
+ * Utils is a utility class that provides various helper methods for the application.
+ * It includes methods for generating passwords, checking service status, getting IP addresses,
+ * and checking network connectivity.
+ */
 public class Utils {
 
     public static final String TAG = "Utils";
@@ -33,6 +38,7 @@ public class Utils {
         return buffer.toString();
     }
 
+    // Checks if a specific service is running in the background.
     public static boolean isMyServiceRunning(Context context, Class<?> serviceClass) {
         ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
         for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
@@ -43,6 +49,7 @@ public class Utils {
         return false;
     }
 
+    // Gets the IP address of the device.
     public static String getIPAddress(boolean useIPv4) {
         try {
             for (NetworkInterface intf : Collections.list(NetworkInterface.getNetworkInterfaces())) {
@@ -69,10 +76,12 @@ public class Utils {
         return "";
     }
 
+    // Checks if the device is connected to a Wi-Fi network.
     public static boolean isConnectedToWifi(Context context) {
         ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         android.net.Network network = connectivityManager.getActiveNetwork();
         if (network == null) return false;
+        // Check if the network capabilities indicate a Wi-Fi connection -> add permission
         NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(network);
         return capabilities != null && capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI);
     }
