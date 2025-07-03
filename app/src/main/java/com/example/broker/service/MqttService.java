@@ -79,7 +79,7 @@ public class MqttService extends Service {
             Properties props = getConfig();
             Log.d(TAG, "Starting MQTT Broker with properties: " + props);
             mqttBroker = new MQTTBroker(props);
-            FutureTask<Boolean> futureTask = new futureTask<>(mqttBroker);
+            FutureTask<Boolean> futureTask = new FutureTask<>(mqttBroker);
 
             if (thread == null || !thread.isAlive()) {
                 thread = new Thread(futureTask);
@@ -99,9 +99,6 @@ public class MqttService extends Service {
             Log.e(TAG, "InterruptedException while starting MQTT Broker: " + e.getMessage(), e);
             Thread.currentThread().interrupt(); // Restore interrupted status
             Toast.makeText(this, "InterruptedException: " + e.getMessage(), Toast.LENGTH_LONG).show();
-        } catch (IOException e) {
-            Log.e(TAG, "IOException while starting MQTT Broker: " + e.getMessage(), e);
-            Toast.makeText(this, "IOException: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
         return START_STICKY;
     }
@@ -116,7 +113,7 @@ public class MqttService extends Service {
         if (thread != null && MQTTBroker.getServer() != null) {
             try {
                 Log.d(TAG, "Stopping MQTT Broker");
-                MQTTBroker.stopServer();
+                mqttBroker.stopServer();
                 thread.interrupt();
                 Toast.makeText(this, "MQTT Broker stopped", Toast.LENGTH_SHORT).show();
             } catch (Exception e) {
