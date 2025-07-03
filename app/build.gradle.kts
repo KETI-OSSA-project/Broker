@@ -68,5 +68,7 @@ dependencies {
     implementation("androidx.preference:preference:1.2.1")
     // implementation ("com.google.android.play:core:1.10.3")
     implementation("com.google.android.play:app-update:2.1.0")
-    implementation("com.google.android.play:in-app-review:2.1.0")
+    // implementation("com.google.android.play:review:2.0.2") -> 아래꺼 안되면 이걸로
+    implementation("com.google.android.play:review-ktx:2.0.2")
+
 }
