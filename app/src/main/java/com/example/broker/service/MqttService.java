@@ -67,7 +67,18 @@ public class MqttService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         // Handle MQTT connection and operations here
         Log.i(TAG, "MqttService started with intent: " + intent);
-        startForeground(1, getNotification());
+
+        // Initialize AppPreferences -> 버전이 26 이상인 경우
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForeground(1, getNotification());
+        } else {
+            // API 26 미만용 Notification 생성 코드 작성 필요
+            Notification notification = new Notification.Builder(this)
+                    .setContentTitle(getText(R.string.notification_title))
+                    .setContentText(getText(R.string.notification_message))
+                    .setSmallIcon(android.R.drawable.stat_notify_sync)
+                    .build();
+        }
         try {
             updateIP();
         } catch (Exception e) {

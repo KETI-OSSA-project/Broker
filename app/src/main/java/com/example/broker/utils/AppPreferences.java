@@ -13,6 +13,12 @@ public class AppPreferences {
     private static final int MODE = Context.MODE_PRIVATE;   // Use private mode for security
     private static SharedPreferences preferences = null;
 
+    // Default values for MQTT configuration
+    public static String mqttHost = "기본값";
+    public static String mqttPort = "1883";
+    public static boolean allowLocalRun = false;
+    public static String mqttWebSocketPort = "8080";
+
     // Preference keys and default values
     private static final Pair<String, Boolean> IS_FIRST_RUN_PREF = new Pair<>("is_first_time", true);
     private static final Pair<String, String> MQTT_PORT = new Pair<>("mqtt_port1", "1883");
