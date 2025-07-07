@@ -5,12 +5,12 @@ import com.example.broker.utils.AppPreferences;
 
 public class MQTTBrokerApp extends Application {
 
-    private static MQTTBrokerApp instance;
+    private static MQTTBrokerApp instance;  // Singleton instance of the application
 
     @Override
     public void onCreate() {
         super.onCreate();
-        AppPreferences.init(this);
+        AppPreferences.init(this);  // Initialize app preferences
         instance = this;
     }
 
