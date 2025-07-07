@@ -10,6 +10,7 @@ import android.os.IBinder;
 import android.os.Build;
 import android.util.Log;
 import android.widget.Toast;
+import io.moquette.BrokerConstants;
 
 import androidx.annotation.RequiresApi;
 
@@ -32,8 +33,6 @@ import java.io.IOException;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
-
-import io.moquette.BrokerConstants;
 
 public class MqttService extends Service {
 
@@ -58,7 +57,7 @@ public class MqttService extends Service {
         );
         props.setProperty(
                 BrokerConstants.WEB_SOCKET_PORT_PROPERTY_NAME,
-                AppPreferences.mqttWebSocketPort
+                String.valueOf(BrokerConstants.WEBSOCKET_PORT)
         );
         return props;
     }
