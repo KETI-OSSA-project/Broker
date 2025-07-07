@@ -16,6 +16,16 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += setOf(
+                "META-INF/INDEX.LIST",
+                "META-INF/io.netty.versions.properties"
+            )
+        }
+    }
+
     buildFeatures {
         // compose = true
         dataBinding = true
@@ -30,6 +40,7 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -37,7 +48,6 @@ android {
 }
 
 dependencies {
-
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
@@ -70,5 +80,4 @@ dependencies {
     implementation("com.google.android.play:app-update:2.1.0")
     // implementation("com.google.android.play:review:2.0.2") -> 아래꺼 안되면 이걸로
     implementation("com.google.android.play:review-ktx:2.0.2")
-
 }

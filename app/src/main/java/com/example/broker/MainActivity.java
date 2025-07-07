@@ -31,6 +31,7 @@ import com.example.broker.service.MqttService;
 import com.example.broker.utils.AppPreferences;
 import com.example.broker.utils.NetworkCallBack;
 import com.example.broker.utils.Utils;
+import android.net.NetworkRequest;
 
 // 설정 변경 사항을 자동으로 감지하고 반영
 public class MainActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
