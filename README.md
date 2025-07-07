@@ -12,8 +12,11 @@ app/
 │               ├── MainActivity.java
 │               ├── service/
 │               │   ├── MQTTBroker.java     # java로 리팩토링 하고 있는 부분
+│               │   ├── MqttService.java    # java로 리팩토링 하고 있는 부분
 │               │   └── ServerInstance.java
 │               ├── util/
+│               │   ├── AppPreferences.java
+│               │   ├── NetworkCallBack.java
 │               │   └── Utils.java
 │               └── app/                    # 필요시 App 클래스 등
 │
@@ -28,7 +31,6 @@ app/
 │
 │       └── com.example.broker (androidTest)
 │       └── com.example.broker (test)
-
 res/
 ├── drawable/
 ├── layout/
