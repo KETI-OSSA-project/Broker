@@ -71,12 +71,23 @@ public class MqttService extends Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForeground(1, getNotification());
         } else {
+            Intent notificationIntent = new Intent(this, MainActivity.class);
+            int pendingIntentflags = PendingIntent.FLAG_UPDATE_CURRENT;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                pendingIntentflags |= PendingIntent.FLAG_MUTABLE;
+            } else {
+                pendingIntentflags |= PendingIntent.FLAG_IMMUTABLE;
+            }
+            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, pendingIntentflags);
+
             // API 26 미만용 Notification 생성 코드 작성 필요
             Notification notification = new Notification.Builder(this)
                     .setContentTitle(getText(R.string.notification_title))
                     .setContentText(getText(R.string.notification_message))
                     .setSmallIcon(android.R.drawable.stat_notify_sync)
+                    .setContentIntent(pendingIntent) // pendingIntent는 아래에서 정의
                     .build();
+            startForeground(1, notification);
         }
         try {
             updateIP();
@@ -140,7 +151,16 @@ public class MqttService extends Service {
     private Notification getNotification() {
         createNotificationChannel();
         Intent notificationIntent = new Intent(this, MainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        // Set flags for PendingIntent based on Android version
+        int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            flags |= PendingIntent.FLAG_MUTABLE;
+        } else {
+            flags |= PendingIntent.FLAG_IMMUTABLE;
+        }
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, flags);
 
         return new Notification.Builder(this, CHANNEL_ID)
                 .setContentTitle(getText(R.string.notification_title))
