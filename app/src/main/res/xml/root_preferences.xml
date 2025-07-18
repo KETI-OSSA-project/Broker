@@ -25,28 +25,28 @@
             app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 
-    <PreferenceCategory
-        app:icon="@drawable/ic_key"
-        app:title="@string/mqtt_auth_header">
+<!--    <PreferenceCategory-->
+<!--        app:icon="@drawable/ic_key"-->
+<!--        app:title="@string/mqtt_auth_header">-->
 
-        <SwitchPreference
-            app:iconSpaceReserved="true"
-            app:key="mqtt_auth_status"
-            app:summaryOff="@string/auth_disabled_summary"
-            app:summaryOn="@string/auth_enabled_summary"
-            app:title="@string/auth_status_title" />
+<!--        <SwitchPreference-->
+<!--            app:iconSpaceReserved="true"-->
+<!--            app:key="mqtt_auth_status"-->
+<!--            app:summaryOff="@string/auth_disabled_summary"-->
+<!--            app:summaryOn="@string/auth_enabled_summary"-->
+<!--            app:title="@string/auth_status_title" />-->
 
-        <EditTextPreference
-            app:dependency="mqtt_auth_status"
-            app:key="mqtt_username"
-            app:title="@string/username_title"
-            app:useSimpleSummaryProvider="true" />
+<!--        <EditTextPreference-->
+<!--            app:dependency="mqtt_auth_status"-->
+<!--            app:key="mqtt_username"-->
+<!--            app:title="@string/username_title"-->
+<!--            app:useSimpleSummaryProvider="true" />-->
 
-        <EditTextPreference
-            app:dependency="mqtt_auth_status"
-            app:key="mqtt_password"
-            app:title="@string/password_title"
-            app:useSimpleSummaryProvider="true" />
-    </PreferenceCategory>
+<!--        <EditTextPreference-->
+<!--            app:dependency="mqtt_auth_status"-->
+<!--            app:key="mqtt_password"-->
+<!--            app:title="@string/password_title"-->
+<!--            app:useSimpleSummaryProvider="true" />-->
+<!--    </PreferenceCategory>-->
 
 </PreferenceScreen>

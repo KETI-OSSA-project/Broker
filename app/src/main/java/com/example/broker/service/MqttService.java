@@ -49,7 +49,7 @@ public class MqttService extends Service {
     private Properties getConfig() {
         Properties props = new Properties();
         props.setProperty(BrokerConstants.PORT_PROPERTY_NAME, AppPreferences.mqttPort);
-        props.setProperty(BrokerConstants.NEED_CLIENT_AUTH, "false");
+        // props.setProperty(BrokerConstants.NEED_CLIENT_AUTH, "false");
 
         props.setProperty(
                 BrokerConstants.HOST_PROPERTY_NAME,
