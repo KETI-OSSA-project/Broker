@@ -20,7 +20,7 @@ public class AppPreferences {
     // Preference keys
     private static final String IS_FIRST_RUN_KEY = "is_first_time";
     private static final String MQTT_PORT_KEY = "mqtt_port1";
-    private static final String MQTT_AUTH_STATUS_KEY = "mqtt_auth_status";
+    // private static final String MQTT_AUTH_STATUS_KEY = "mqtt_auth_status";
     private static final String MQTT_BROKER_STATUS_KEY = "mqtt_broker_status";
     private static final String MQTT_USER_NAME_KEY = "mqtt_username";
     private static final String MQTT_PASSWORD_KEY = "mqtt_password";
@@ -30,7 +30,7 @@ public class AppPreferences {
     // Default values
     private static final boolean IS_FIRST_RUN_DEFAULT = true;
     private static final String MQTT_PORT_DEFAULT = "1883";
-    private static final boolean MQTT_AUTH_STATUS_DEFAULT = false;
+    // private static final boolean MQTT_AUTH_STATUS_DEFAULT = false;
     private static final boolean MQTT_BROKER_STATUS_DEFAULT = false;
     private static final String MQTT_USER_NAME_DEFAULT = "admin";
     private static final String MQTT_PASSWORD_DEFAULT = null;
@@ -93,15 +93,15 @@ public class AppPreferences {
     }
 
     // MQTT Auth Status
-    public static boolean getMqttAuthStatus() {
-        return requirePrefs().getBoolean(MQTT_AUTH_STATUS_KEY, MQTT_AUTH_STATUS_DEFAULT);
-    }
-
-    public static void setMqttAuthStatus(boolean value) {
-        SharedPreferences.Editor editor = requirePrefs().edit();
-        editor.putBoolean(MQTT_AUTH_STATUS_KEY, value);
-        editor.commit();
-    }
+//    public static boolean getMqttAuthStatus() {
+//        return requirePrefs().getBoolean(MQTT_AUTH_STATUS_KEY, MQTT_AUTH_STATUS_DEFAULT);
+//    }
+//
+//    public static void setMqttAuthStatus(boolean value) {
+//        SharedPreferences.Editor editor = requirePrefs().edit();
+//        editor.putBoolean(MQTT_AUTH_STATUS_KEY, value);
+//        editor.commit();
+//    }
 
     // MQTT Broker Status
     public static boolean getMqttBrokerStatus() {

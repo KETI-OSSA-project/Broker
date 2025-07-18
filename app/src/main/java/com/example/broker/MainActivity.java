@@ -109,8 +109,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         private SharedPreferences mPreferences;
         private EditTextPreference host;
         private EditTextPreference port;
-        private EditTextPreference username;
-        private EditTextPreference password;
+//        private EditTextPreference username;
+//        private EditTextPreference password;
         private SwitchPreference brokerTurnOrOff;
         private final String TAG = "SettingsFragment";
 
@@ -125,8 +125,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             mPreferences = requireActivity().getSharedPreferences("MQTT Broker", MODE_PRIVATE);
             host = findPreference(getString(R.string.mqtt_host));
             port = findPreference(getString(R.string.mqtt_port));
-            username = findPreference(getString(R.string.mqtt_username));
-            password = findPreference(getString(R.string.mqtt_password));
+//            username = findPreference(getString(R.string.mqtt_username));
+//            password = findPreference(getString(R.string.mqtt_password));
             brokerTurnOrOff = findPreference(getString(R.string.mqtt_broker_status));
 
             ConnectivityManager connectivityManager =
@@ -188,8 +188,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             if (host != null) {
                 host.setText(AppPreferences.getMqttHost());
                 port.setText(AppPreferences.getMqttPort());
-                password.setText(AppPreferences.getMqttPassword());
-                username.setText(AppPreferences.getMqttUserName());
+//                password.setText(AppPreferences.getMqttPassword());
+//                username.setText(AppPreferences.getMqttUserName());
                 brokerTurnOrOff.setChecked(AppPreferences.getMqttBrokerStatus());
 
                 if (AppPreferences.getMqttBrokerStatus() &&
@@ -240,21 +240,22 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                         stopService();
                     }
                     sendBroadcast(broadcastIntent);
-                } else if (key.equals(getString(R.string.mqtt_password)) ||
-                          key.equals(getString(R.string.mqtt_username)) ||
-                          key.equals(getString(R.string.mqtt_port))) {
-
-                    if (key.equals(getString(R.string.mqtt_password))) {
-                        AppPreferences.setMqttPassword(sharedPreferences.getString(key, ""));
-                    }
-                    if (key.equals(getString(R.string.mqtt_username))) {
-                        AppPreferences.setMqttUserName(sharedPreferences.getString(key, ""));
-                    }
-                    if (key.equals(getString(R.string.mqtt_port))) {
-                        AppPreferences.setMqttPort(sharedPreferences.getString(key, ""));
-                    }
-                    showSnackBar("You need to restart the server for applying the config changes");
                 }
+//                else if (key.equals(getString(R.string.mqtt_password)) ||
+//                          key.equals(getString(R.string.mqtt_username)) ||
+//                          key.equals(getString(R.string.mqtt_port))) {
+//
+//                    if (key.equals(getString(R.string.mqtt_password))) {
+//                        AppPreferences.setMqttPassword(sharedPreferences.getString(key, ""));
+//                    }
+//                    if (key.equals(getString(R.string.mqtt_username))) {
+//                        AppPreferences.setMqttUserName(sharedPreferences.getString(key, ""));
+//                    }
+//                    if (key.equals(getString(R.string.mqtt_port))) {
+//                        AppPreferences.setMqttPort(sharedPreferences.getString(key, ""));
+//                    }
+//                    showSnackBar("You need to restart the server for applying the config changes");
+//                }
             }
         } catch (Exception e) {
             Log.e(TAG, "onSharedPreferenceChanged: ", e);
@@ -264,8 +265,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     private void initSharedPrefs() {
         AppPreferences.setMqttHost(Utils.getIPAddress(true));
         AppPreferences.setMqttPort("1883");
-        AppPreferences.setMqttUserName("admin");
-        AppPreferences.setMqttPassword(Utils.generatePassword());
+//        AppPreferences.setMqttUserName("admin");
+//        AppPreferences.setMqttPassword(Utils.generatePassword());
         AppPreferences.setFirstRun(false);
     }
 
