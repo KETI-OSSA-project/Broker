@@ -19,16 +19,6 @@ app/
 │               │   ├── NetworkCallBack.java
 │               │   └── Utils.java
 │               └── app/                    # 필요시 App 클래스 등
-│
-│       └── securityandsafetythings/
-│           └── messagebroker/              # java로 구현된 표준 api (messagebroker) --> 임시로 제거
-│               ├── accesscontrol/
-│               ├── applicationstitching/
-│               ├── ports/
-│               ├── MessagingManager.java
-│               ├── Message.java
-│               └── ...
-│
 │       └── com.example.broker (androidTest)
 │       └── com.example.broker (test)
 res/
