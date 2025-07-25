@@ -20,7 +20,7 @@
 
     <!--Summary-->
     <string name="broker_status_summary">Restart required if changes in below settings needs to be reflected</string>
-<!--    <string name="auth_enabled_summary">You need username and password to establish connection</string>-->
+<!--    <string ㅋㅋname="auth_enabled_summary">You need username and password to establish connection</string>-->
 <!--    <string name="auth_disabled_summary">You don\'t need username or password for connection</string>-->
 
     <!--Prefs key-->
