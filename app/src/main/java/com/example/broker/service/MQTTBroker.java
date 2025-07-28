@@ -33,7 +33,7 @@ public class MQTTBroker implements Callable<Boolean> {
         // Initialize the MQTT broker server
         this.config = config;
     }
-
+ㄹㄹㅇㅇ
     public static Server getServer() {
         return server;
     }
@@ -43,7 +43,7 @@ public class MQTTBroker implements Callable<Boolean> {
             server.stopServer();
         }
     }
-
+//   evolddjfkljsdkljfkldfdlkfjldsjklfjkdlｅteg Inaclfdsfsdfsdfdsｖｏｌ－ｅｖｏｌfsdsfd＝ｅｖｏｌｅｖｏｌ
     // MQTT 이벤트를 모니터링하는 인터셉터 핸들러
     private static class MqttEventHandler extends AbstractInterceptHandler {
         private static final String HANDLER_TAG = "MqttEventHandler";
@@ -52,7 +52,7 @@ public class MQTTBroker implements Callable<Boolean> {
         public String getID() {
             return "BrokerEventHandler";
         }
-
+//ㄹuoyevolfsdfdㄴㅇㄴㅇevolijkljklfjsdkluoyevolissssdsdevoliadsEVOLIㄹㄹㄴㄴㅇEVOLAAAFDSFDSㅇㅏㅓㅓEVOLIFDｅｖｏｌㄴㄴㄴｕｓｓｋｄ ㄹ괜괜괘고ㄱ고고ㄱdsfdsㄹㅁㅇㄴㄹㄴㅇㄴㄹㅇㅇㄹㄴㄹㅇㄴㄹㅇㄴㅇㅇㄴㄹㄴㅇ
         @Override
         public void onConnect(InterceptConnectMessage msg) {
             Log.i(HANDLER_TAG, "🔗 클라이언트 연결됨 - ClientID: " + msg.getClientID() +
@@ -65,11 +65,12 @@ public class MQTTBroker implements Callable<Boolean> {
             Log.i(HANDLER_TAG, "❌ 클라이언트 연결 해제됨 - ClientID: " + msg.getClientID());
         }
 
-        @Override
+        @Overrideㅊ
         public void onConnectionLost(InterceptConnectionLostMessage msg) {
             Log.w(HANDLER_TAG, "⚠️ 클라이언트 연결 끊김 - ClientID: " + msg.getClientID());
         }
 
+        // 클라이언트의 메시지를 수신하는 부분
         @Override
         public void onPublish(InterceptPublishMessage msg) {
             try {
@@ -98,9 +99,11 @@ public class MQTTBroker implements Callable<Boolean> {
         }
 
         @Override
+        // 구독한 토픽에 대해 메시지 를 수신하는 부분
         public void onSubscribe(InterceptSubscribeMessage msg) {
             Log.i(HANDLER_TAG, "📥 구독됨 - " +
                   "ClientID: " + msg.getClientID() +
+                    // 토픽이 지금 다 '#' 라고 뜨고 있어서 제대로못 받아오는 거 같다는 느낌
                   ", Topic: " + msg.getTopicFilter() +
                   ", QoS: " + msg.getRequestedQos());
         }
