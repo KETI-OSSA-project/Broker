@@ -29,6 +29,7 @@ android {
     buildFeatures {
         // compose = true
         dataBinding = true
+        aidl = true
     }
 
     buildTypes {
@@ -80,4 +81,5 @@ dependencies {
     implementation("com.google.android.play:app-update:2.1.0")
     // implementation("com.google.android.play:review:2.0.2") -> 아래꺼 안되면 이걸로
     implementation("com.google.android.play:review-ktx:2.0.2")
+    implementation ("com.hivemq:hivemq-mqtt-client:1.3.0")
 }
