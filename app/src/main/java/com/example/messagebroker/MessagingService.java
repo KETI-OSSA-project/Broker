@@ -102,9 +102,21 @@ public class MessagingService extends Service {
                 return;
             }
 
-            Log.d(TAG, "📤 Publishing message to topic: " + topic +
+            Log.d(TAG, "📤 Publishing message to topic: '" + topic + "'" +
                       ", payload size: " + (message.getPayload() != null ? message.getPayload().length : 0) +
-                      ", subscribers: " + getSubscriberCountForTopic(topic));
+                      ", direct subscribers: " + getSubscriberCountForTopic(topic));
+
+            // 디버깅: 모든 등록된 토픽과 구독자 수 출력
+            Log.d(TAG, "🔍 All registered topics and subscribers:");
+            for (Map.Entry<String, Set<ClientSubscription>> entry : topicSubscriptions.entrySet()) {
+                Log.d(TAG, "   Topic: '" + entry.getKey() + "' -> " + entry.getValue().size() + " subscribers");
+            }
+
+            // 디버깅: 클라이언트별 구독 토픽 출력
+            Log.d(TAG, "🔍 Client topic subscriptions:");
+            for (Map.Entry<Integer, Set<String>> entry : clientTopics.entrySet()) {
+                Log.d(TAG, "   Client " + entry.getKey() + " -> topics: " + entry.getValue());
+            }
 
             // 메시지 히스토리에 추가
             addToTopicHistory(topic, message);
