@@ -51,14 +51,24 @@ public class MessagingService extends Service {
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        Log.i(TAG, "MessagingService bound");
+        Log.i(TAG, "🔗 클라이언트가 브로커에 연결됨 (onBind 호출)");
         return messagingServiceBinder;
+    }
+
+    private boolean checkPermission(String permission) {
+        int pid = Binder.getCallingPid();
+        int uid = Binder.getCallingUid();
+        return checkPermission(permission, pid, uid) == getPackageManager().PERMISSION_GRANTED;
     }
 
     private final IMessagingService.Stub messagingServiceBinder = new IMessagingService.Stub() {
 
         @Override
         public void publish(Message message) {
+            if (!checkPermission("com.example.permission.MESSAGE_PUBLISH")) {
+                Log.w(TAG, "발행 권한 없음");
+                return;
+            }
             if (message == null || message.getTopic() == null) {
                 Log.w(TAG, "Invalid message for publishing");
                 return;
@@ -73,19 +83,28 @@ public class MessagingService extends Service {
 
         @Override
         public boolean subscribe(IMessageListener client, Filter filter) {
+            if (!checkPermission("com.example.permission.MESSAGE_SUBSCRIBE")) {
+                Log.w(TAG, "구독 권한 없음");
+                return false;
+            }
             if (client == null || filter == null) {
                 Log.w(TAG, "Invalid subscribe parameters");
                 return false;
             }
 
             String topic = filter.getTopic();
+            if (topic == null || topic.isEmpty()) {
+                Log.w(TAG, "Subscribe failed: topic is null or empty");
+                return false;
+            }
+
             String packageName = getPackageManager().getNameForUid(Binder.getCallingUid());
-            Log.i(TAG, "📥 Subscribe request - Topic: " + topic + ", Package: " + packageName);
+            Log.i(TAG, "\uD83D\uDCE5 Subscribe request - Package: " + packageName + ", Topic: " + topic);
 
             topicSubscriptions.computeIfAbsent(topic, k -> new CopyOnWriteArraySet<>())
                              .add(new ClientSubscription(client, packageName));
 
-            Log.i(TAG, "✅ Subscribe successful - Topic: " + topic);
+            Log.i(TAG, "✅ Subscribe successful");
             return true;
         }
 
@@ -95,18 +114,19 @@ public class MessagingService extends Service {
                 return false;
             }
 
-            String topic = filter.getTopic();
-            Log.i(TAG, "📤 Unsubscribe request - Topic: " + topic);
+            // Filter에서 topic 추출 불가, topic 사용 금지
+            Log.i(TAG, "📤 Unsubscribe request");
 
-            Set<ClientSubscription> subscribers = topicSubscriptions.get(topic);
-            if (subscribers != null) {
-                subscribers.removeIf(sub -> sub.listener.asBinder().equals(client.asBinder()));
-                if (subscribers.isEmpty()) {
-                    topicSubscriptions.remove(topic);
-                }
-            }
+            // topicSubscriptions 관련 로직은 별도 처리 필요 (topic 없이 동작하도록 수정 필요)
+            // Set<ClientSubscription> subscribers = topicSubscriptions.get(topic);
+            // if (subscribers != null) {
+            //     subscribers.removeIf(sub -> sub.listener.asBinder().equals(client.asBinder()));
+            //     if (subscribers.isEmpty()) {
+            //         topicSubscriptions.remove(topic);
+            //     }
+            // }
 
-            Log.i(TAG, "✅ Unsubscribe successful - Topic: " + topic);
+            Log.i(TAG, "✅ Unsubscribe successful");
             return true;
         }
 

@@ -82,6 +82,7 @@ public class MainActivity extends Activity {
         });
     }
 
+    // 여기서 첫번째 바인딩 로그 호출됌
     private void startAndBindService() {
         Intent serviceIntent = new Intent(this, MessagingService.class);
         startService(serviceIntent);
