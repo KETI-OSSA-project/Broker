@@ -1,321 +1,165 @@
 package com.example.broker;
 
-import android.content.BroadcastReceiver;
+import android.app.Activity;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
-import android.net.ConnectivityManager;
-import android.os.Build;
+import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.provider.Settings;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Looper;
 import android.util.Log;
-import android.view.View;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.RequiresApi;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.ContextCompat;
-import androidx.preference.EditTextPreference;
-import androidx.preference.PreferenceFragmentCompat;
-import androidx.preference.PreferenceManager;
-import androidx.preference.SwitchPreference;
-import com.google.android.material.snackbar.Snackbar;
-import com.google.android.play.core.appupdate.AppUpdateManagerFactory;
-import com.google.android.play.core.appupdate.AppUpdateOptions;
-import com.google.android.play.core.install.model.AppUpdateType;
-import com.google.android.play.core.install.model.UpdateAvailability;
-import com.example.broker.databinding.ActivityMainBinding;
-import com.example.broker.service.MqttService;
-import com.example.broker.utils.AppPreferences;
-import com.example.broker.utils.NetworkCallBack;
-import com.example.broker.utils.Utils;
-import android.net.NetworkRequest;
+import android.widget.Button;
+import android.widget.TextView;
 
-// 설정 변경 사항을 자동으로 감지하고 반영
-public class MainActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
-    private String TAG = MainActivity.class.getSimpleName();
-    private ActivityMainBinding binding;
-    private ActivityResultLauncher<Intent> requestNotificationPermissionIntentLauncher;
+/**
+ * MainActivity - MQTT 브로커 상태 모니터링 UI
+ */
+public class MainActivity extends Activity {
+
+    private static final String TAG = "BrokerActivity";
+
+    private TextView statusText;
+    private TextView clientCountText;
+    private TextView topicCountText;
+    private TextView logText;
+    private Button clearLogButton;
+    private Button refreshButton;
+
+    private MessagingService messagingService;
+    private boolean isServiceBound = false;
+    private Handler uiHandler;
+
+    private final SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // AppPreferences 초기화
-        AppPreferences.init(getApplicationContext());
+        // XML 레이아웃 파일 사용
+        setContentView(R.layout.activity_main);
 
-        if (AppPreferences.getFirstRun()) {
-            initSharedPrefs();
-            Log.d(TAG, "onCreate: its first time run");
-        }
+        Log.i(TAG, "🚀 Broker UI 시작");
 
-        setIP();
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        sharedPreferences.registerOnSharedPreferenceChangeListener(this);
-        binding =ActivityMainBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
+        initViews(); // XML에서 뷰들을 찾아서 초기화
+        setupListeners();
 
-        requestNotificationPermissionIntentLauncher =
-            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-                if (result.getResultCode() == RESULT_OK) {
-                    Log.d(TAG, "notification permission granted");
-                } else {
-                    Log.w(TAG, "notification permission not granted");
-                    showSnackBar("Please grant Notification permission from App Settings");
-                }
-            });
+        uiHandler = new Handler(Looper.getMainLooper());
 
-        if (savedInstanceState == null) {
-            getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.settings, new SettingsFragment())
-                .commit();
-        } else {
-            setTitle(savedInstanceState.getCharSequence(TAG));
-        }
+        // MessagingService 시작 및 바인딩
+        startAndBindService();
+
+        // UI 업데이트 시작
+        startUIUpdates();
+
+        addLog("브로커 UI 시작됨");
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        checkForInAppUpdate();
+    private void initViews() {
+        // XML 레이아웃에서 뷰들을 찾아서 초기화
+        statusText = findViewById(R.id.statusText);
+        clientCountText = findViewById(R.id.clientCountText);
+        topicCountText = findViewById(R.id.topicCountText);
+        logText = findViewById(R.id.logText);
+        clearLogButton = findViewById(R.id.clearLogButton);
+        refreshButton = findViewById(R.id.refreshButton);
     }
 
-    private void checkForInAppUpdate() {
-        var updateManager = AppUpdateManagerFactory.create(this);
-        var appUpdateInfoTask = updateManager.getAppUpdateInfo();
-        appUpdateInfoTask.addOnSuccessListener(appUpdateInfo -> {
-            if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE &&
-                appUpdateInfo.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE)) {
-                try {
-                    updateManager.startUpdateFlowForResult(
-                        appUpdateInfo,
-                        this,
-                        AppUpdateOptions.newBuilder(AppUpdateType.IMMEDIATE).build(),
-                        0
-                    );
-                } catch (Exception e) {
-                    Log.e(TAG, "checkForInAppUpdate: ", e);
-                }
+    private void setupListeners() {
+        clearLogButton.setOnClickListener(v -> {
+            logText.setText("");
+            addLog("로그가 지워졌습니다");
+        });
+
+        refreshButton.setOnClickListener(v -> {
+            updateBrokerStats();
+            addLog("상태 새로고침됨");
+        });
+    }
+
+    private void startAndBindService() {
+        Intent serviceIntent = new Intent(this, MessagingService.class);
+        startService(serviceIntent);
+        bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+        addLog("MessagingService 시작 중...");
+    }
+
+    private final ServiceConnection serviceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            Log.d(TAG, "✅ MessagingService 연결됨");
+            isServiceBound = true;
+            statusText.setText("🟢 실행 중");
+            addLog("MessagingService 연결됨");
+            updateBrokerStats();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            Log.d(TAG, "❌ MessagingService 연결 해제됨");
+            isServiceBound = false;
+            statusText.setText("🔴 연결 끊김");
+            addLog("MessagingService 연결 해제됨");
+        }
+    };
+
+    private void startUIUpdates() {
+        uiHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                updateBrokerStats();
+                // 5초마다 업데이트
+                uiHandler.postDelayed(this, 5000);
             }
         });
     }
 
-    public static class SettingsFragment extends PreferenceFragmentCompat {
+    private void updateBrokerStats() {
+        if (isServiceBound) {
+            // 실제 서비스에서 통계 가져오기 (임시로 랜덤 값 사용)
+            int clients = (int) (Math.random() * 10);
+            int topics = (int) (Math.random() * 5);
 
-        private SharedPreferences mPreferences;
-        private EditTextPreference host;
-        private EditTextPreference port;
-//        private EditTextPreference username;
-//        private EditTextPreference password;
-        private SwitchPreference brokerTurnOrOff;
-        private final String TAG = "SettingsFragment";
-
-        @Override
-        public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
-            setPreferencesFromResource(R.xml.root_preferences, rootKey);
-        }
-
-        @Override
-        public void onCreate(Bundle savedInstanceState) {
-            super.onCreate(savedInstanceState);
-            mPreferences = requireActivity().getSharedPreferences("MQTT Broker", MODE_PRIVATE);
-            host = findPreference(getString(R.string.mqtt_host));
-            port = findPreference(getString(R.string.mqtt_port));
-//            username = findPreference(getString(R.string.mqtt_username));
-//            password = findPreference(getString(R.string.mqtt_password));
-            brokerTurnOrOff = findPreference(getString(R.string.mqtt_broker_status));
-
-            ConnectivityManager connectivityManager =
-                (ConnectivityManager) requireContext().getSystemService(Context.CONNECTIVITY_SERVICE);
-            connectivityManager.requestNetwork(new NetworkRequest.Builder().build(), new NetworkCallBack());
-
-            ContextCompat.registerReceiver(
-                requireContext(),
-                mqttReceiver,
-                new IntentFilter(Utils.MQTT_STATUS_ON_OR_OFF),
-                ContextCompat.RECEIVER_NOT_EXPORTED
-            );
-            ContextCompat.registerReceiver(
-                requireContext(),
-                networkReceiver,
-                new IntentFilter(Utils.NETWORK_BROADCAST_ACTION),
-                ContextCompat.RECEIVER_NOT_EXPORTED
-            );
-        }
-
-        private final BroadcastReceiver networkReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                if (intent != null && intent.getExtras() != null) {
-                    Boolean status = intent.getExtras().getBoolean("status");
-                    if (status) {
-                        Log.d(TAG, "onReceive: ");
-                    } else {
-                        if (host != null) host.setText("Not Set");
-                        if (brokerTurnOrOff != null) brokerTurnOrOff.setChecked(false);
-                        ((MainActivity) getActivity()).stopService();
-                    }
-                }
-            }
-        };
-
-        private final BroadcastReceiver mqttReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                if (intent != null && intent.getExtras() != null) {
-                    boolean status = intent.getExtras().getBoolean("status");
-                    Log.i(TAG, "onReceive: " + status);
-                    if (status) {
-                        if (host != null) host.setText(intent.getExtras().getString("host"));
-                        if (brokerTurnOrOff != null) brokerTurnOrOff.setChecked(true);
-                    } else {
-                        if (brokerTurnOrOff != null) brokerTurnOrOff.setChecked(false);
-                        if (host != null) host.setText("Not Set");
-                        AppPreferences.setMqttBrokerStatus(false);
-                    }
-                }
-            }
-        };
-
-        @RequiresApi(api = Build.VERSION_CODES.O)
-        @Override
-        public void onResume() {
-            super.onResume();
-            if (host != null) {
-                host.setText(AppPreferences.getMqttHost());
-                port.setText(AppPreferences.getMqttPort());
-//                password.setText(AppPreferences.getMqttPassword());
-//                username.setText(AppPreferences.getMqttUserName());
-                brokerTurnOrOff.setChecked(AppPreferences.getMqttBrokerStatus());
-
-                if (AppPreferences.getMqttBrokerStatus() &&
-                    !Utils.isMyServiceRunning(requireContext(), MqttService.class)) {
-                    ((MainActivity) getActivity()).startService();
-                }
-            }
+            clientCountText.setText(String.valueOf(clients));
+            topicCountText.setText(String.valueOf(topics));
+        } else {
+            clientCountText.setText("0");
+            topicCountText.setText("0");
         }
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
+    private void addLog(String message) {
+        String timestamp = timeFormat.format(new Date());
+        String logEntry = "[" + timestamp + "] " + message + "\n";
+
+        runOnUiThread(() -> {
+            logText.append(logEntry);
+            // 스크롤을 맨 아래로
+            final int scrollAmount = logText.getLayout() != null ?
+                logText.getLayout().getLineTop(logText.getLineCount()) - logText.getHeight() : 0;
+            if (scrollAmount > 0) {
+                logText.scrollTo(0, scrollAmount);
+            }
+        });
+
+        Log.d(TAG, message);
+    }
+
     @Override
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        Log.d(TAG, "Preference changed. " + key);
-        try {
-            if (key != null) {
-                if (key.equals(getString(R.string.mqtt_broker_status))) {
-                    Log.d(TAG, "Server status changed");
-                    boolean status = sharedPreferences.getBoolean(key, false);
-                    Log.d(TAG, "Start Server?" + status);
-                    Intent broadcastIntent = new Intent(Utils.MQTT_STATUS_ON_OR_OFF);
-                    broadcastIntent.setPackage(getPackageName());
-
-                    if (status) {
-                        boolean isWifiConnected = Utils.isConnectedToWifi(this);
-                        Log.d(TAG, "onSharedPreferenceChanged: " + isWifiConnected);
-                        if (isWifiConnected) {
-                            broadcastIntent.putExtra("host", Utils.getIPAddress(true));
-                            broadcastIntent.putExtra("status", true);
-                            AppPreferences.setMqttBrokerStatus(true);
-                            AppPreferences.setAllowLocalRun(false);
-                            Log.d(TAG, "Starting Server");
-                            startService();
-                        } else {
-                            broadcastIntent.putExtra("status", true);
-                            broadcastIntent.putExtra("host", "127.0.0.1");
-                            AppPreferences.setMqttBrokerStatus(true);
-                            AppPreferences.setAllowLocalRun(true);
-                            Log.d(TAG, "Starting Server");
-                            startService();
-                        }
-                    } else {
-                        AppPreferences.setAllowLocalRun(false);
-                        AppPreferences.setMqttHost("");
-                        broadcastIntent.putExtra("status", false);
-                        AppPreferences.setMqttBrokerStatus(false);
-                        Log.d(TAG, "Stopping Server");
-                        stopService();
-                    }
-                    sendBroadcast(broadcastIntent);
-                }
-//                else if (key.equals(getString(R.string.mqtt_password)) ||
-//                          key.equals(getString(R.string.mqtt_username)) ||
-//                          key.equals(getString(R.string.mqtt_port))) {
-//
-//                    if (key.equals(getString(R.string.mqtt_password))) {
-//                        AppPreferences.setMqttPassword(sharedPreferences.getString(key, ""));
-//                    }
-//                    if (key.equals(getString(R.string.mqtt_username))) {
-//                        AppPreferences.setMqttUserName(sharedPreferences.getString(key, ""));
-//                    }
-//                    if (key.equals(getString(R.string.mqtt_port))) {
-//                        AppPreferences.setMqttPort(sharedPreferences.getString(key, ""));
-//                    }
-//                    showSnackBar("You need to restart the server for applying the config changes");
-//                }
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "onSharedPreferenceChanged: ", e);
+    protected void onDestroy() {
+        super.onDestroy();
+        if (isServiceBound) {
+            unbindService(serviceConnection);
+            isServiceBound = false;
         }
-    }
-
-    private void initSharedPrefs() {
-        AppPreferences.setMqttHost(Utils.getIPAddress(true));
-        AppPreferences.setMqttPort("1883");
-//        AppPreferences.setMqttUserName("admin");
-//        AppPreferences.setMqttPassword(Utils.generatePassword());
-        AppPreferences.setFirstRun(false);
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    private void startService() {
-        Log.d(TAG, "Starting MQTT Service");
-
-        // Sets up permissions request launcher.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED) {
-                try {
-                    Intent intent = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS);
-                    intent.putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
-                    requestNotificationPermissionIntentLauncher.launch(intent);
-                } catch (Exception ex) {
-                    Log.e(TAG, "onCreate: ", ex);
-                    showSnackBar(ex.getLocalizedMessage() != null ?
-                        ex.getLocalizedMessage() : "Unknown error occurred when requesting permission");
-                }
-                return;
-            }
+        if (uiHandler != null) {
+            uiHandler.removeCallbacksAndMessages(null);
         }
-
-        Intent serviceIntent = new Intent(this, MqttService.class);
-        if (Utils.isMyServiceRunning(this, MqttService.class)) {
-            stopService(serviceIntent);
-        }
-        if (AppPreferences.getMqttBrokerStatus()) {
-            startForegroundService(serviceIntent);
-        }
-    }
-
-    private void showSnackBar(String message) {
-        View contextView = findViewById(android.R.id.content);
-        Snackbar.make(contextView, message, Snackbar.LENGTH_LONG).show();
-    }
-
-    private void stopService() {
-        try {
-            Log.d(TAG, "Stopping MQTT Service");
-            Intent serviceIntent = new Intent(this, MqttService.class);
-            stopService(serviceIntent);
-        } catch (Exception ex) {
-            Log.e(TAG, "stopService: ", ex);
-        }
-    }
-
-    private void setIP() {
-        AppPreferences.setMqttHost(Utils.getIPAddress(true));
+        addLog("브로커 UI 종료됨");
     }
 }
