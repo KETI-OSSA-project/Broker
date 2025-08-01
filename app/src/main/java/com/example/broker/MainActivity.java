@@ -41,12 +41,12 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // XML 레이아웃 파일 사용
+
         setContentView(R.layout.activity_main);
 
         Log.i(TAG, "🚀 Broker UI 시작");
 
-        initViews(); // XML에서 뷰들을 찾아서 초기화
+        initViews();
         setupListeners();
 
         uiHandler = new Handler(Looper.getMainLooper());
@@ -54,7 +54,7 @@ public class MainActivity extends Activity {
         // MessagingService 시작 및 바인딩
         startAndBindService();
 
-        // UI 업데이트 시작
+
         startUIUpdates();
 
         addLog("브로커 UI 시작됨");
@@ -82,7 +82,7 @@ public class MainActivity extends Activity {
         });
     }
 
-    // 여기서 첫번째 바인딩 로그 호출됌
+
     private void startAndBindService() {
         Intent serviceIntent = new Intent(this, MessagingService.class);
         startService(serviceIntent);
@@ -122,7 +122,7 @@ public class MainActivity extends Activity {
 
     private void updateBrokerStats() {
         if (isServiceBound) {
-            // 실제 서비스에서 통계 가져오기 (임시로 랜덤 값 사용)
+            // 실제 서비스에서 통계 가져오기 (임시로 랜덤 값 사용) -> 추후 수정
             int clients = (int) (Math.random() * 10);
             int topics = (int) (Math.random() * 5);
 

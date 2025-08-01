@@ -13,14 +13,14 @@
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:padding="16dp"
-        android:background="#2196F3"
+        android:background="#6750A4"
         android:layout_marginBottom="16dp">
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="🚀 MQTT Broker"
+            android:text="Android Broker"
             android:textColor="@android:color/white"
             android:textSize="24sp"
             android:textStyle="bold" />
@@ -155,7 +155,7 @@
             android:layout_weight="1"
             android:text="새로고침"
             android:layout_marginStart="8dp"
-            android:backgroundTint="#2196F3" />
+            android:backgroundTint="#6750A4" />
 
     </LinearLayout>
 
