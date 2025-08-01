@@ -99,10 +99,15 @@ public class MessagingService extends Service {
             }
 
             String packageName = getPackageManager().getNameForUid(Binder.getCallingUid());
-            Log.i(TAG, "\uD83D\uDCE5 Subscribe request - Package: " + packageName + ", Topic: " + topic);
+            Log.i(TAG, "\uD83D\uDCE5 Subscribe request - Package: " + packageName + ", Topic: " + topic + ", client: " + client.asBinder());
 
-            topicSubscriptions.computeIfAbsent(topic, k -> new CopyOnWriteArraySet<>())
-                             .add(new ClientSubscription(client, packageName));
+            Set<ClientSubscription> subscribers = topicSubscriptions.computeIfAbsent(topic, k -> new CopyOnWriteArraySet<>());
+            subscribers.add(new ClientSubscription(client, packageName));
+            // 구독자 목록 전체 출력
+            for (ClientSubscription sub : subscribers) {
+                Log.d(TAG, "[Subscribe] Existing subscriber: " + sub.listener.asBinder());
+            }
+            Log.d(TAG, "[Subscribe] topicSubscriptions: " + topicSubscriptions.keySet());
 
             Log.i(TAG, "✅ Subscribe successful");
             return true;
@@ -111,23 +116,36 @@ public class MessagingService extends Service {
         @Override
         public boolean unsubscribe(IMessageListener client, Filter filter) {
             if (client == null || filter == null) {
+                Log.w(TAG, "Unsubscribe failed: client or filter is null");
                 return false;
             }
 
-            // Filter에서 topic 추출 불가, topic 사용 금지
-            Log.i(TAG, "📤 Unsubscribe request");
+            String topic = filter.getTopic();
+            if (topic == null || topic.isEmpty()) {
+                Log.w(TAG, "Unsubscribe failed: topic is null or empty");
+                return false;
+            }
 
-            // topicSubscriptions 관련 로직은 별도 처리 필요 (topic 없이 동작하도록 수정 필요)
-            // Set<ClientSubscription> subscribers = topicSubscriptions.get(topic);
-            // if (subscribers != null) {
-            //     subscribers.removeIf(sub -> sub.listener.asBinder().equals(client.asBinder()));
-            //     if (subscribers.isEmpty()) {
-            //         topicSubscriptions.remove(topic);
-            //     }
-            // }
+            Log.i(TAG, "\uD83D\uDCE4 Unsubscribe request - Topic: " + topic + ", client: " + client.asBinder());
 
-            Log.i(TAG, "✅ Unsubscribe successful");
-            return true;
+            Set<ClientSubscription> subscribers = topicSubscriptions.get(topic);
+            if (subscribers != null) {
+                for (ClientSubscription sub : subscribers) {
+                    Log.d(TAG, "[Unsubscribe] Existing subscriber: " + sub.listener.asBinder());
+                }
+                boolean removed = subscribers.removeIf(sub -> sub.listener.asBinder().equals(client.asBinder()));
+                if (subscribers.isEmpty()) {
+                    topicSubscriptions.remove(topic);
+                }
+                if (removed) {
+                    Log.i(TAG, "✅ Unsubscribe successful");
+                    return true;
+                }
+            } else {
+                Log.w(TAG, "Unsubscribe failed: no subscribers for topic " + topic);
+            }
+            Log.w(TAG, "Unsubscribe failed: client not found for topic");
+            return false;
         }
 
         // 공식 문서에서는 unsubscribe라고 되어있으나, 구분을 위해 변경
