@@ -7,7 +7,6 @@ import com.example.broker.IMessageListener;
 
 /**
  * MQTT Broker Service Interface
- * 다른 앱들이 브로커 서비스에 접근하기 위한 인터페이스
  */
 interface IMessagingService {
     /**

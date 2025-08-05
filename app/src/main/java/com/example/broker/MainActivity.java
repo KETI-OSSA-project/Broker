@@ -18,7 +18,7 @@ import java.util.Date;
 import java.util.Locale;
 
 /**
- * MainActivity - MQTT 브로커 상태 모니터링 UI
+ * MainActivity - 브로커 상태 모니터링 UI
  */
 public class MainActivity extends Activity {
 
@@ -40,23 +40,14 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-
         setContentView(R.layout.activity_main);
-
-        Log.i(TAG, "🚀 Broker UI 시작");
-
         initViews();
         setupListeners();
-
         uiHandler = new Handler(Looper.getMainLooper());
 
         // MessagingService 시작 및 바인딩
         startAndBindService();
-
-
         startUIUpdates();
-
         addLog("브로커 UI 시작됨");
     }
 
@@ -82,12 +73,11 @@ public class MainActivity extends Activity {
         });
     }
 
-
     private void startAndBindService() {
         Intent serviceIntent = new Intent(this, MessagingService.class);
         startService(serviceIntent);
         bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
-        addLog("MessagingService 시작 중...");
+        addLog("Android broker 시작 중...");
     }
 
     private final ServiceConnection serviceConnection = new ServiceConnection() {
@@ -96,7 +86,7 @@ public class MainActivity extends Activity {
             Log.d(TAG, "✅ MessagingService 연결됨");
             isServiceBound = true;
             statusText.setText("🟢 실행 중");
-            addLog("MessagingService 연결됨");
+            addLog("Android broker 연결됨"); // UI용
             updateBrokerStats();
         }
 
@@ -105,7 +95,7 @@ public class MainActivity extends Activity {
             Log.d(TAG, "❌ MessagingService 연결 해제됨");
             isServiceBound = false;
             statusText.setText("🔴 연결 끊김");
-            addLog("MessagingService 연결 해제됨");
+            addLog("Android broker 연결 해제됨");
         }
     };
 
@@ -114,7 +104,6 @@ public class MainActivity extends Activity {
             @Override
             public void run() {
                 updateBrokerStats();
-                // 5초마다 업데이트
                 uiHandler.postDelayed(this, 5000);
             }
         });
@@ -140,7 +129,6 @@ public class MainActivity extends Activity {
 
         runOnUiThread(() -> {
             logText.append(logEntry);
-            // 스크롤을 맨 아래로
             final int scrollAmount = logText.getLayout() != null ?
                 logText.getLayout().getLineTop(logText.getLineCount()) - logText.getHeight() : 0;
             if (scrollAmount > 0) {

@@ -82,4 +82,5 @@ dependencies {
     // implementation("com.google.android.play:review:2.0.2") -> 아래꺼 안되면 이걸로
     implementation("com.google.android.play:review-ktx:2.0.2")
     implementation ("com.hivemq:hivemq-mqtt-client:1.3.0")
+    // implementation("org.nanohttpd:nanohttpd:2.3.1") -> Rest API 사용할 때
 }

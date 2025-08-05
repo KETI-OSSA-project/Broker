@@ -19,7 +19,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  */
 public class MessagingService extends Service {
 
-    private static final String TAG = "MQTTBroker";
+    private static final String TAG = "Android Broker";
     private static final int MAX_MESSAGE_HISTORY_PER_TOPIC = 100;
 
     private final Map<String, Set<ClientSubscription>> topicSubscriptions = new ConcurrentHashMap<>();
@@ -51,7 +51,7 @@ public class MessagingService extends Service {
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        Log.i(TAG, "🔗 클라이언트가 브로커에 연결됨 (onBind 호출)");
+        Log.i(TAG, "🔗 클라이언트가 브로커에 연결됨");
         return messagingServiceBinder;
     }
 

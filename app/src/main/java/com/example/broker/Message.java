@@ -17,7 +17,7 @@ import java.util.Collections;
  */
 public class Message implements Parcelable {
 
-    // Message header key names (통합된 상수들)
+    // Message header key names
     public static final String TOPIC = "topic";
     public static final String PUBLISHER_ID = "publisherId";
     public static final String DESTINATION_IDS = "destinationIds";
