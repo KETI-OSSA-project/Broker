@@ -18,7 +18,7 @@ import java.util.Date;
 import java.util.Locale;
 
 /**
- * MainActivity - 브로커 상태 모니터링 UI
+ * MainActivity - 브로커 UI 상태 모니터링
  */
 public class MainActivity extends Activity {
 
