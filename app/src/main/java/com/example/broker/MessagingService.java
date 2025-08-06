@@ -78,7 +78,16 @@ public class MessagingService extends Service {
             Log.i(TAG, "📤 Publishing message to topic: " + topic);
 
             addToTopicHistory(topic, message);
-            deliverMessageToSubscribers(topic, message);
+            deliverMessageToSubscribers(topic, message); // sub로 메시지 발행하는 부분
+            // gateway로 메시지 전달
+            if (gatewayListener != null) {
+                try {
+                    gatewayListener.onMessage(message);
+                    Log.i(TAG, "Message delivered to gateway");
+                } catch (RemoteException e) {
+                    Log.e(TAG, "Failed to deliver message to gateway", e);
+                }
+            }
         }
 
         @Override
@@ -168,6 +177,15 @@ public class MessagingService extends Service {
             return true;
         }
     };
+
+    // gateway 리스너 등록 변수
+    private IMessageListener gatewayListener;
+
+    // gateway 리스너 등록 메서드
+    public void setGatewayListener(IMessageListener listener) {
+        this.gatewayListener = listener;
+        Log.i(TAG, "Gateway listener registered: " + (listener != null ? listener.asBinder() : "null"));
+    }
 
     private void addToTopicHistory(String topic, Message message) {
         CopyOnWriteArrayList<Message> history = topicMessageHistory.computeIfAbsent(topic, k -> new CopyOnWriteArrayList<>());

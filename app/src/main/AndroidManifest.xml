@@ -16,7 +16,7 @@
     <!-- Custom permissions definition -->
     <permission
         android:name="com.example.permission.BIND_MESSAGING_SERVICE"
-        android:protectionLevel="signature" />
+        android:protectionLevel="normal" />
     <permission
         android:name="com.example.permission.MESSAGE_PUBLISH"
         android:protectionLevel="normal" />
