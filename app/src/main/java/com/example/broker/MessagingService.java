@@ -84,8 +84,13 @@ public class MessagingService extends Service {
                 try {
                     gatewayListener.onMessage(message);
                     Log.i(TAG, "Message delivered to gateway");
+                } catch (android.os.DeadObjectException e) {
+                    Log.w(TAG, "Gateway disconnected, removing listener");
+                    gatewayListener = null;
                 } catch (RemoteException e) {
                     Log.e(TAG, "Failed to deliver message to gateway", e);
+                    // 다른 RemoteException의 경우도 리스너를 제거할지 고려
+                    gatewayListener = null;
                 }
             } else {
                 Log.w(TAG, "gatewayListener is null, message not delivered to gateway");
