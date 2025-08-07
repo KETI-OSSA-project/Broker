@@ -84,9 +84,16 @@ public class MessagingService extends Service {
                 try {
                     gatewayListener.onMessage(message);
                     Log.i(TAG, "Message delivered to gateway");
+                } catch (android.os.DeadObjectException e) {
+                    Log.w(TAG, "Gateway disconnected, removing listener");
+                    gatewayListener = null;
                 } catch (RemoteException e) {
                     Log.e(TAG, "Failed to deliver message to gateway", e);
+                    // 다른 RemoteException의 경우도 리스너를 제거할지 고려
+                    gatewayListener = null;
                 }
+            } else {
+                Log.w(TAG, "gatewayListener is null, message not delivered to gateway");
             }
         }
 
@@ -176,6 +183,13 @@ public class MessagingService extends Service {
             Log.i(TAG, "✅ Unsubscribe all successful");
             return true;
         }
+
+        // 게이트웨이로 메시지 보내는 함수
+        @Override
+        public void GatewayListener(IMessageListener listener) {
+            gatewayListener = listener;
+            Log.i(TAG, "GatewayListener 등록됨: " + (listener != null ? listener.asBinder() : "null"));
+        }
     };
 
     // gateway 리스너 등록 변수
@@ -212,7 +226,7 @@ public class MessagingService extends Service {
                 Log.d(TAG, "Message delivered to client: " + subscription.packageName);
             } catch (RemoteException e) {
                 Log.e(TAG, "Failed to deliver message to client: " + subscription.packageName, e);
-                // 연결이 끊어진 클라이언트 제거
+                // 연���이 끊어진 클라이언트 제거
                 subscribers.remove(subscription);
             }
         }
