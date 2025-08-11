@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 import java.util.Collections;
+import android.util.Log;
 
 /**
  * Container class encapsulating messages for enabling communication between different clients using
@@ -53,8 +54,11 @@ public class Message implements Parcelable {
         this.correlationData = null;
         this.timeStamp = System.currentTimeMillis(); // 자바 버전으로 인해 System.currentTimeMillis() 사용
 
+        Log.d("Message", "Creating message with topic: " + topic + " (type: " + (topic != null ? topic.getClass().getSimpleName() : "null") + ")");
+
         if (topic != null) {
             bundle.putString(TOPIC, topic);
+            Log.d("Message", "Stored topic in bundle: " + bundle.getString(TOPIC));
         }
         if (destinationIds != null) {
             bundle.putStringArrayList(DESTINATION_IDS, new ArrayList<>(destinationIds));
@@ -92,6 +96,8 @@ public class Message implements Parcelable {
         responseTopic = in.readString();
         correlationData = in.createByteArray();
         timeStamp = in.readLong();
+
+        Log.d("Message", "Restored message from parcel - bundleTopic: " + bundle.getString(TOPIC));
     }
 
     @Override
@@ -102,6 +108,8 @@ public class Message implements Parcelable {
         dest.writeString(responseTopic);
         dest.writeByteArray(correlationData);
         dest.writeLong(timeStamp);
+
+        Log.d("Message", "Writing message to parcel - topic: " + bundle.getString(TOPIC));
     }
 
     @Override
@@ -148,11 +156,10 @@ public class Message implements Parcelable {
      * Get the set of destination identifiers the message is directed to.
      */
     public Set<String> getDestinationIds() {
-        ArrayList<String> destinationIds = bundle.getStringArrayList(DESTINATION_IDS);
-        if (destinationIds == null) {
+        if (bundle.getStringArrayList(DESTINATION_IDS) == null) {
             return Collections.emptySet();
         }
-        return new HashSet<>(destinationIds);
+        return new HashSet<>(bundle.getStringArrayList(DESTINATION_IDS));
     }
 
     /**
@@ -167,6 +174,27 @@ public class Message implements Parcelable {
      */
     public long getTimeStamp() {
         return timeStamp;
+    }
+
+    /**
+     * Override toString to provide meaningful message representation
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Message{");
+        sb.append("id=").append(messageId != null ? messageId.toString() : "null");
+        sb.append(", topic='").append(getTopic()).append("'");
+        sb.append(", payloadSize=").append(payload != null ? payload.length : 0).append(" bytes");
+        if (getPublisherId() != null) {
+            sb.append(", publisherId='").append(getPublisherId()).append("'");
+        }
+        if (responseTopic != null) {
+            sb.append(", responseTopic='").append(responseTopic).append("'");
+        }
+        sb.append(", timestamp=").append(timeStamp);
+        sb.append("}");
+        return sb.toString();
     }
 
     public static class Builder {
@@ -237,12 +265,6 @@ public class Message implements Parcelable {
          */
         public Builder setTimeStamp(long timeStamp) {
             this.timeStamp = timeStamp; // 자바 버전 문제로 인해 instant -> long 변경
-            return this;
-        }
-
-        // Backward compatibility - keep existing setTopic method
-        public Builder setTopic(@NonNull String topic) {
-            this.topic = topic;
             return this;
         }
     }
