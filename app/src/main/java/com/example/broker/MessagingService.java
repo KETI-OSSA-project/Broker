@@ -128,14 +128,12 @@ public class MessagingService extends Service {
                     // Bundle 관련 오류인 경우 연결을 유지
                     if (e.getMessage() != null && (e.getMessage().contains("Bundle") || e.getMessage().contains("aligned"))) {
                         Log.w(TAG, "🔄 Bundle-related error, keeping gateway connection alive");
-                        Log.w(TAG, "📋 이 오류는 게이트웨이 앱과 브로커 앱의 Message 클래스 버전이 다르기 때문입니다.");
                     } else {
                         gatewayListener = null;
                     }
                 }
             } else {
                 Log.w(TAG, "⚠️ gatewayListener is null, message not delivered to gateway");
-                Log.w(TAG, "⚠️ Gateway 앱이 브로커에 연결되어 있지 않습니다. Gateway 앱을 실행하고 브로커에 연결해주세요.");
             }
         }
 
