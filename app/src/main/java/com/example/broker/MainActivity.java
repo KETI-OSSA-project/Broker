@@ -15,9 +15,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-/**
- * MainActivity - 브로커 UI (상태 + 로그만 표시)
- */
 public class MainActivity extends Activity {
 
     private static final String TAG = "BrokerActivity";
@@ -40,7 +37,6 @@ public class MainActivity extends Activity {
 
         // MessagingService 시작 및 바인딩
         startAndBindService();
-        addLog("브로커 UI 시작됨");
     }
 
     private void initViews() {
@@ -61,13 +57,11 @@ public class MainActivity extends Activity {
         Intent serviceIntent = new Intent(this, MessagingService.class);
         startService(serviceIntent);
         bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
-        addLog("Android broker 시작 중...");
     }
 
     private final ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            Log.d(TAG, "✅ MessagingService 연결됨");
             isServiceBound = true;
             statusText.setText("🟢 실행 중");
             addLog("Android broker 연결됨");
@@ -75,7 +69,6 @@ public class MainActivity extends Activity {
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
-            Log.d(TAG, "❌ MessagingService 연결 해제됨");
             isServiceBound = false;
             statusText.setText("🔴 연결 끊김");
             addLog("Android broker 연결 해제됨");
@@ -105,6 +98,5 @@ public class MainActivity extends Activity {
             unbindService(serviceConnection);
             isServiceBound = false;
         }
-        addLog("브로커 UI 종료됨");
     }
 }

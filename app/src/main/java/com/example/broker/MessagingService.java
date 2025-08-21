@@ -14,9 +14,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-/**
- * MessagingService provides MQTT message broker functionality for Android applications.
- */
 public class MessagingService extends Service {
 
     private static final String TAG = "Android Broker";
@@ -51,7 +48,7 @@ public class MessagingService extends Service {
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        Log.i(TAG, "🔗 클라이언트가 브로커에 연결됨");
+        Log.i(TAG, "클라이언트가 브로커에 연결됨");
         return messagingServiceBinder;
     }
 
@@ -82,10 +79,6 @@ public class MessagingService extends Service {
             // gateway로 메시지 전달
             if (gatewayListener != null) {
                 try {
-                    Log.d(TAG, "🔍 [GATEWAY DEBUG] Before sending to gateway - topic: '" + message.getTopic() + "', messageId: " + message.getMessageId());
-                    Log.d(TAG, "🔍 [GATEWAY DEBUG] Message object toString: " + message.toString());
-                    Log.d(TAG, "🔍 [GATEWAY DEBUG] Payload size: " + (message.getPayload() != null ? message.getPayload().length : "null"));
-
                     // Bundle 직렬화 문제를 완전히 우회하기 위해 최소한의 정보만 전달
                     String safeTopic = message.getTopic();
                     byte[] safePayload = message.getPayload();
@@ -98,42 +91,25 @@ public class MessagingService extends Service {
                     // 완전히 새로운 Message 객체를 생성하되, Bundle 최소화
                     Message gatewayMessage = new Message(safeTopic, safePayload != null ? safePayload : new byte[0]);
 
-                    // 전달 전 검증
-                    Log.d(TAG, "🔍 [GATEWAY DEBUG] Gateway message validation - topic: '" + gatewayMessage.getTopic() + "', payloadSize: " + (gatewayMessage.getPayload() != null ? gatewayMessage.getPayload().length : 0));
-
-                    Log.d(TAG, "🔍 [GATEWAY DEBUG] About to call gatewayListener.onMessage()...");
                     gatewayListener.onMessage(gatewayMessage);
-                    Log.i(TAG, "📤 Message delivered to gateway: " + gatewayMessage);
-                    Log.d(TAG, "🔍 [GATEWAY DEBUG] Gateway message delivery completed successfully");
                 } catch (android.os.DeadObjectException e) {
-                    Log.w(TAG, "💀 Gateway disconnected (DeadObjectException), removing listener");
-                    Log.w(TAG, "💀 DeadObjectException details: " + e.getMessage());
                     gatewayListener = null;
                 } catch (RemoteException e) {
-                    Log.e(TAG, "❌ Failed to deliver message to gateway (RemoteException)", e);
-                    Log.e(TAG, "❌ RemoteException details: " + e.getClass().getSimpleName() + ": " + e.getMessage());
-
                     // Bundle 관련 오류인 경우 게이트웨이 연결을 끊지 않고 재시도
                     if (e.getMessage() != null && (e.getMessage().contains("Bundle") || e.getMessage().contains("aligned"))) {
-                        Log.w(TAG, "🔄 Bundle alignment error detected, gateway still connected but incompatible");
-                        Log.w(TAG, "🔧 Gateway 앱의 Message 클래스를 브로커와 동일한 버전으로 업데이트해주세요.");
                         // gatewayListener를 null로 설정하지 않음 - 게이트웨이는 여전히 연결되어 있음
                     } else {
                         gatewayListener = null;
                     }
                 } catch (Exception e) {
-                    Log.e(TAG, "❌ Unexpected error during gateway message delivery", e);
-                    Log.e(TAG, "❌ Error details: " + e.getClass().getSimpleName() + ": " + e.getMessage());
-
                     // Bundle 관련 오류인 경우 연결을 유지
                     if (e.getMessage() != null && (e.getMessage().contains("Bundle") || e.getMessage().contains("aligned"))) {
-                        Log.w(TAG, "🔄 Bundle-related error, keeping gateway connection alive");
                     } else {
                         gatewayListener = null;
                     }
                 }
             } else {
-                Log.w(TAG, "⚠️ gatewayListener is null, message not delivered to gateway");
+                Log.w(TAG, "게이트웨이가 아직 켜지지 않음");
             }
         }
 
@@ -144,13 +120,13 @@ public class MessagingService extends Service {
                 return false;
             }
             if (client == null || filter == null) {
-                Log.w(TAG, "Invalid subscribe parameters");
+                Log.w(TAG, "파라미터가 이상함");
                 return false;
             }
 
             String topic = filter.getTopic();
             if (topic == null || topic.isEmpty()) {
-                Log.w(TAG, "Subscribe failed: topic is null or empty");
+                Log.w(TAG, "구독 실패: 토픽 비어있음");
                 return false;
             }
 
@@ -159,13 +135,12 @@ public class MessagingService extends Service {
 
             Set<ClientSubscription> subscribers = topicSubscriptions.computeIfAbsent(topic, k -> new CopyOnWriteArraySet<>());
             subscribers.add(new ClientSubscription(client, packageName));
-            // 구독자 목록 전체 출력
             for (ClientSubscription sub : subscribers) {
                 Log.d(TAG, "[Subscribe] Existing subscriber: " + sub.listener.asBinder());
             }
             Log.d(TAG, "[Subscribe] topicSubscriptions: " + topicSubscriptions.keySet());
 
-            Log.i(TAG, "✅ Subscribe successful");
+            Log.i(TAG, "구독 성공");
             return true;
         }
 
@@ -194,7 +169,7 @@ public class MessagingService extends Service {
                     topicSubscriptions.remove(topic);
                 }
                 if (removed) {
-                    Log.i(TAG, "✅ Unsubscribe successful");
+                    Log.i(TAG, "구독 해제 성공");
                     return true;
                 }
             } else {
@@ -211,7 +186,7 @@ public class MessagingService extends Service {
                 return false;
             }
 
-            Log.i(TAG, "📤 Unsubscribe all request");
+            Log.i(TAG, "모든 구독 해제");
 
             for (Set<ClientSubscription> subscribers : topicSubscriptions.values()) {
                 subscribers.removeIf(sub -> sub.listener.asBinder().equals(client.asBinder()));
@@ -220,7 +195,7 @@ public class MessagingService extends Service {
             // 빈 토픽들 정리
             topicSubscriptions.entrySet().removeIf(entry -> entry.getValue().isEmpty());
 
-            Log.i(TAG, "✅ Unsubscribe all successful");
+            Log.i(TAG, "모든 구독 해제 성공");
             return true;
         }
 
@@ -228,7 +203,7 @@ public class MessagingService extends Service {
         @Override
         public void GatewayListener(IMessageListener listener) {
             gatewayListener = listener;
-            Log.i(TAG, "GatewayListener 등록됨: " + (listener != null ? listener.asBinder() : "null"));
+            Log.i(TAG, "GatewayListener 등록됨");
         }
     };
 
