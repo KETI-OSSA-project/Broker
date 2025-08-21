@@ -6,9 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Looper;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
@@ -18,22 +16,18 @@ import java.util.Date;
 import java.util.Locale;
 
 /**
- * MainActivity - 브로커 UI 상태 모니터링
+ * MainActivity - 브로커 UI (상태 + 로그만 표시)
  */
 public class MainActivity extends Activity {
 
     private static final String TAG = "BrokerActivity";
 
     private TextView statusText;
-    private TextView clientCountText;
-    private TextView topicCountText;
     private TextView logText;
     private Button clearLogButton;
-    private Button refreshButton;
 
-    private MessagingService messagingService;
+    private MessagingService messagingService; // (현재 활용 X, 추후 확장 대비)
     private boolean isServiceBound = false;
-    private Handler uiHandler;
 
     private final SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
 
@@ -43,33 +37,23 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         initViews();
         setupListeners();
-        uiHandler = new Handler(Looper.getMainLooper());
 
         // MessagingService 시작 및 바인딩
         startAndBindService();
-        startUIUpdates();
         addLog("브로커 UI 시작됨");
     }
 
     private void initViews() {
         // XML 레이아웃에서 뷰들을 찾아서 초기화
         statusText = findViewById(R.id.statusText);
-        clientCountText = findViewById(R.id.clientCountText);
-        topicCountText = findViewById(R.id.topicCountText);
         logText = findViewById(R.id.logText);
         clearLogButton = findViewById(R.id.clearLogButton);
-        refreshButton = findViewById(R.id.refreshButton);
     }
 
     private void setupListeners() {
         clearLogButton.setOnClickListener(v -> {
             logText.setText("");
             addLog("로그가 지워졌습니다");
-        });
-
-        refreshButton.setOnClickListener(v -> {
-            updateBrokerStats();
-            addLog("상태 새로고침됨");
         });
     }
 
@@ -86,8 +70,7 @@ public class MainActivity extends Activity {
             Log.d(TAG, "✅ MessagingService 연결됨");
             isServiceBound = true;
             statusText.setText("🟢 실행 중");
-            addLog("Android broker 연결됨"); // UI용
-            updateBrokerStats();
+            addLog("Android broker 연결됨");
         }
 
         @Override
@@ -98,30 +81,6 @@ public class MainActivity extends Activity {
             addLog("Android broker 연결 해제됨");
         }
     };
-
-    private void startUIUpdates() {
-        uiHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                updateBrokerStats();
-                uiHandler.postDelayed(this, 5000);
-            }
-        });
-    }
-
-    private void updateBrokerStats() {
-        if (isServiceBound) {
-            // 실제 서비스에서 통계 가져오기 (임시로 랜덤 값 사용) -> 추후 수정
-            int clients = (int) (Math.random() * 10);
-            int topics = (int) (Math.random() * 5);
-
-            clientCountText.setText(String.valueOf(clients));
-            topicCountText.setText(String.valueOf(topics));
-        } else {
-            clientCountText.setText("0");
-            topicCountText.setText("0");
-        }
-    }
 
     private void addLog(String message) {
         String timestamp = timeFormat.format(new Date());
@@ -145,9 +104,6 @@ public class MainActivity extends Activity {
         if (isServiceBound) {
             unbindService(serviceConnection);
             isServiceBound = false;
-        }
-        if (uiHandler != null) {
-            uiHandler.removeCallbacksAndMessages(null);
         }
         addLog("브로커 UI 종료됨");
     }
