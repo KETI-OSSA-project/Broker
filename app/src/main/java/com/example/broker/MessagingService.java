@@ -210,12 +210,6 @@ public class MessagingService extends Service {
     // gateway 리스너 등록 변수
     private IMessageListener gatewayListener;
 
-    // gateway 리스너 등록 메서드
-    public void setGatewayListener(IMessageListener listener) {
-        this.gatewayListener = listener;
-        Log.i(TAG, "Gateway listener registered: " + (listener != null ? listener.asBinder() : "null"));
-    }
-
     private void addToTopicHistory(String topic, Message message) {
         CopyOnWriteArrayList<Message> history = topicMessageHistory.computeIfAbsent(topic, k -> new CopyOnWriteArrayList<>());
 
