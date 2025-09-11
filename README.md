@@ -83,7 +83,7 @@ broker_java/
 
 ## 빌드 & 실행
 
-1. Android Studio에서 `broker_java` 열기
+1. Android Studio에서 `broker` 열기
 2. `MainActivity` 실행 → Broker UI 실행
 3. 내부 Publisher/Subscriber 연결 상태 확인
 
@@ -102,16 +102,6 @@ broker_java/
 1. 외부 MQTT Publisher → `downlink/device1/data` 발행
 2. Gateway → Broker에 메시지 전달
 3. Broker → 내부 Subscriber에 메시지 라우팅
-
----
-
-## 동작 규칙
-
-* 구독 이전에 발행된 메시지는 수신되지 않음
-* 구독 해제된 토픽은 더 이상 메시지를 받지 않음
-* 동일 토픽을 여러 Subscriber가 구독하면 모두 수신
-* 동일 토픽 중복 구독은 1회만 수신 처리
-* Gateway Uplink/Downlink 규칙과 일치해야 외부 메시지가 교환됨
 
 ---
 
