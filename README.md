@@ -20,6 +20,7 @@
   <img src="https://img.shields.io/badge/Mosquitto-2.0.22-3C5280?logo=eclipseide&logoColor=white" />
 
 </div>
+
 ## 개요
 
 Broker 모듈은 **Azena 메시징 생태계의 중심 허브**로, Publisher가 발행한 메시지를 토픽 기반으로 관리하고, 구독 중인 Subscriber에게 라우팅합니다.
