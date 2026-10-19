@@ -8,6 +8,9 @@ import android.os.RemoteException;
 import android.util.Log;
 import androidx.annotation.Nullable;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -66,8 +69,8 @@ public class MessagingService extends Service {
                 Log.w(TAG, "발행 권한 없음");
                 return;
             }
-            if (message == null || message.getTopic() == null) {
-                Log.w(TAG, "Invalid message for publishing");
+            if (message == null || !TopicFilter.isValidTopic(message.getTopic())) {
+                Log.w(TAG, "Invalid message for publishing (토픽 없음 또는 와일드카드 포함)");
                 return;
             }
 
@@ -129,6 +132,10 @@ public class MessagingService extends Service {
                 Log.w(TAG, "구독 실패: 토픽 비어있음");
                 return false;
             }
+            if (!TopicFilter.isValidFilter(topic)) {
+                Log.w(TAG, "구독 실패: 필터 문법 오류 " + topic);
+                return false;
+            }
 
             String packageName = getPackageManager().getNameForUid(Binder.getCallingUid());
             Log.i(TAG, "\uD83D\uDCE5 Subscribe request - Package: " + packageName + ", Topic: " + topic + ", client: " + client.asBinder());
@@ -187,14 +194,7 @@ public class MessagingService extends Service {
             }
 
             Log.i(TAG, "모든 구독 해제");
-
-            for (Set<ClientSubscription> subscribers : topicSubscriptions.values()) {
-                subscribers.removeIf(sub -> sub.listener.asBinder().equals(client.asBinder()));
-            }
-
-            // 빈 토픽들 정리
-            topicSubscriptions.entrySet().removeIf(entry -> entry.getValue().isEmpty());
-
+            removeClient(client.asBinder());
             Log.i(TAG, "모든 구독 해제 성공");
             return true;
         }
@@ -221,41 +221,40 @@ public class MessagingService extends Service {
     }
 
     private void deliverMessageToSubscribers(String topic, Message message) {
-        Set<ClientSubscription> subscribers = topicSubscriptions.get(topic);
-        if (subscribers == null || subscribers.isEmpty()) {
+        // 리스너별로 맞은 필터를 모은다. 한 리스너가 여러 필터에 맞아도 알림은 한 번 (절차서 19번)
+        Map<ClientSubscription, List<String>> targets = new LinkedHashMap<>();
+        for (Map.Entry<String, Set<ClientSubscription>> entry : topicSubscriptions.entrySet()) {
+            if (!TopicFilter.matches(entry.getKey(), topic)) continue;
+            for (ClientSubscription subscription : entry.getValue()) {
+                targets.computeIfAbsent(subscription, k -> new ArrayList<>()).add(entry.getKey());
+            }
+        }
+        if (targets.isEmpty()) {
             Log.w(TAG, "No subscribers for topic: " + topic);
             return;
         }
 
-        Log.i(TAG, "Delivering message to " + subscribers.size() + " subscribers");
-
-        // 연결이 끊어진 구독자들을 추적하기 위한 리스트
-        Set<ClientSubscription> deadSubscribers = new CopyOnWriteArraySet<>();
-
-        for (ClientSubscription subscription : subscribers) {
+        for (Map.Entry<ClientSubscription, List<String>> target : targets.entrySet()) {
+            ClientSubscription subscription = target.getKey();
             try {
                 subscription.listener.onMessage(message);
-                Log.d(TAG, "Message delivered to client: " + subscription.packageName);
+                Log.i(TAG, "Delivered topic=" + topic + " to " + subscription.packageName + " filters=" + target.getValue());
             } catch (android.os.DeadObjectException e) {
-                Log.w(TAG, "Client disconnected, will remove: " + subscription.packageName);
-                deadSubscribers.add(subscription);
+                Log.w(TAG, "Client disconnected, removed: " + subscription.packageName);
+                removeClient(subscription.listener.asBinder());
             } catch (RemoteException e) {
                 Log.e(TAG, "Failed to deliver message to client: " + subscription.packageName, e);
-                deadSubscribers.add(subscription);
+                removeClient(subscription.listener.asBinder());
             }
         }
+    }
 
-        // 연결이 끊어진 구독자들을 안전하게 제거
-        if (!deadSubscribers.isEmpty()) {
-            subscribers.removeAll(deadSubscribers);
-            Log.i(TAG, "Removed " + deadSubscribers.size() + " dead subscribers from topic: " + topic);
-
-            // 토픽에 구독자가 없으면 토픽 자체를 제거
-            if (subscribers.isEmpty()) {
-                topicSubscriptions.remove(topic);
-                Log.i(TAG, "Removed empty topic: " + topic);
-            }
+    // 리스너의 구독을 모든 필터에서 지우고 빈 필터를 정리한다
+    private void removeClient(IBinder binder) {
+        for (Set<ClientSubscription> subscribers : topicSubscriptions.values()) {
+            subscribers.removeIf(sub -> sub.listener.asBinder().equals(binder));
         }
+        topicSubscriptions.entrySet().removeIf(entry -> entry.getValue().isEmpty());
     }
 }
 
