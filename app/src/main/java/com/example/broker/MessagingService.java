@@ -34,8 +34,8 @@ public class MessagingService extends Service {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            ClientSubscription that = (ClientSubscription) o;
+            if (o == null || getClass() != o.getClass()) return false;      // 리스너 기준으로 비교
+            ClientSubscription that = (ClientSubscription) o;               // 다운캐스팅
             return listener.asBinder().equals(that.listener.asBinder());
         }
 
@@ -120,7 +120,7 @@ public class MessagingService extends Service {
                 return false;
             }
             if (client == null || filter == null) {
-                Log.w(TAG, "파라미터가 이상함");
+                Log.w(TAG, "파라미터가 null");
                 return false;
             }
 
