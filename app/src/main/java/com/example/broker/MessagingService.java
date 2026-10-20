@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -28,18 +29,24 @@ public class MessagingService extends Service {
     private static class ClientSubscription {
         final IMessageListener listener;
         final String packageName;
+        final String publisherId;   // 필터의 발행자 조건(OSSA 5.1.7). null이면 모든 발행자
 
-        ClientSubscription(IMessageListener listener, String packageName) {
+        ClientSubscription(IMessageListener listener, String packageName, String publisherId) {
             this.listener = listener;
             this.packageName = packageName;
+            this.publisherId = publisherId;
+        }
+
+        boolean accepts(Message message) {
+            return publisherId == null || publisherId.equals(message.getPublisherId());
         }
 
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;      // 리스너 기준으로 비교
+            if (o == null || getClass() != o.getClass()) return false;      // 리스너와 발행자 조건으로 비교
             ClientSubscription that = (ClientSubscription) o;               // 다운캐스팅
-            return listener.asBinder().equals(that.listener.asBinder());
+            return listener.asBinder().equals(that.listener.asBinder()) && Objects.equals(publisherId, that.publisherId);
         }
 
         @Override
@@ -75,7 +82,9 @@ public class MessagingService extends Service {
             }
 
             String topic = message.getTopic();
-            Log.i(TAG, "📤 Publishing message to topic: " + topic);
+            // source ID는 앱이 적은 값이 아니라 호출한 앱의 패키지명(OSSA 5.1.6). 남의 이름으로 발행할 수 없다
+            message.setPublisherId(getPackageManager().getNameForUid(Binder.getCallingUid()));
+            Log.i(TAG, "📤 Publishing message to topic: " + topic + " publisher=" + message.getPublisherId());
 
             addToTopicHistory(topic, message);
             deliverMessageToSubscribers(topic, message); // sub로 메시지 발행하는 부분
@@ -138,10 +147,11 @@ public class MessagingService extends Service {
             }
 
             String packageName = getPackageManager().getNameForUid(Binder.getCallingUid());
-            Log.i(TAG, "\uD83D\uDCE5 Subscribe request - Package: " + packageName + ", Topic: " + topic + ", client: " + client.asBinder());
+            Log.i(TAG, "\uD83D\uDCE5 Subscribe request - Package: " + packageName + ", Topic: " + topic
+                    + ", publisher: " + filter.getPublisherId() + ", client: " + client.asBinder());
 
             Set<ClientSubscription> subscribers = topicSubscriptions.computeIfAbsent(topic, k -> new CopyOnWriteArraySet<>());
-            subscribers.add(new ClientSubscription(client, packageName));
+            subscribers.add(new ClientSubscription(client, packageName, filter.getPublisherId()));
             for (ClientSubscription sub : subscribers) {
                 Log.d(TAG, "[Subscribe] Existing subscriber: " + sub.listener.asBinder());
             }
@@ -171,7 +181,8 @@ public class MessagingService extends Service {
                 for (ClientSubscription sub : subscribers) {
                     Log.d(TAG, "[Unsubscribe] Existing subscriber: " + sub.listener.asBinder());
                 }
-                boolean removed = subscribers.removeIf(sub -> sub.listener.asBinder().equals(client.asBinder()));
+                boolean removed = subscribers.removeIf(sub -> sub.listener.asBinder().equals(client.asBinder())
+                        && Objects.equals(sub.publisherId, filter.getPublisherId()));
                 if (subscribers.isEmpty()) {
                     topicSubscriptions.remove(topic);
                 }
@@ -199,16 +210,24 @@ public class MessagingService extends Service {
             return true;
         }
 
-        // 게이트웨이로 메시지 보내는 함수
+        // 게이트웨이로 메시지 보내는 함수. 모든 토픽을 받는 자리라 게이트웨이 앱만 등록할 수 있다
+        // ponytail: 패키지명만 확인. 같은 이름의 다른 앱이 설치될 수 있는 기기면 서명 비교(checkSignatures)를 더한다
         @Override
         public void GatewayListener(IMessageListener listener) {
+            String caller = getPackageManager().getNameForUid(Binder.getCallingUid());
+            if (!GATEWAY_PACKAGE.equals(caller)) {
+                Log.w(TAG, "GatewayListener 거부: " + caller);
+                throw new SecurityException("only " + GATEWAY_PACKAGE + " can register the gateway listener");
+            }
             gatewayListener = listener;
             Log.i(TAG, "GatewayListener 등록됨");
         }
     };
 
+    private static final String GATEWAY_PACKAGE = "com.example.gateway";
+
     // gateway 리스너 등록 변수
-    private IMessageListener gatewayListener;
+    private volatile IMessageListener gatewayListener;
 
     private void addToTopicHistory(String topic, Message message) {
         CopyOnWriteArrayList<Message> history = topicMessageHistory.computeIfAbsent(topic, k -> new CopyOnWriteArrayList<>());
@@ -222,11 +241,19 @@ public class MessagingService extends Service {
 
     private void deliverMessageToSubscribers(String topic, Message message) {
         // 리스너별로 맞은 필터를 모은다. 한 리스너가 여러 필터에 맞아도 알림은 한 번 (절차서 19번)
+        // 발행자 조건이 있는 필터는 그 발행자의 메시지에만 맞는다 (OSSA 5.1.7)
         Map<ClientSubscription, List<String>> targets = new LinkedHashMap<>();
         for (Map.Entry<String, Set<ClientSubscription>> entry : topicSubscriptions.entrySet()) {
             if (!TopicFilter.matches(entry.getKey(), topic)) continue;
             for (ClientSubscription subscription : entry.getValue()) {
-                targets.computeIfAbsent(subscription, k -> new ArrayList<>()).add(entry.getKey());
+                if (!subscription.accepts(message)) {
+                    Log.i(TAG, "Skipped topic=" + topic + " for " + subscription.packageName + " filter=" + entry.getKey()
+                            + " wants publisher=" + subscription.publisherId + " got=" + message.getPublisherId());
+                    continue;
+                }
+                // 발행자 조건을 뺀 키로 모아야 한 리스너에 한 번만 간다
+                ClientSubscription key = new ClientSubscription(subscription.listener, subscription.packageName, null);
+                targets.computeIfAbsent(key, k -> new ArrayList<>()).add(entry.getKey());
             }
         }
         if (targets.isEmpty()) {

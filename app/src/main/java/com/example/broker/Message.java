@@ -92,7 +92,8 @@ public class Message implements Parcelable {
     private Message(Parcel in) {
         messageId = (UUID) in.readSerializable();
         bundle = in.readBundle(getClass().getClassLoader());
-        payload = in.createByteArray();
+        byte[] p = in.createByteArray();
+        payload = p != null ? p : new byte[0];   // payload는 선택 항목. 없으면 빈 배열로 넘겨 구독자가 null을 받지 않게
         responseTopic = in.readString();
         correlationData = in.createByteArray();
         timeStamp = in.readLong();
@@ -167,6 +168,11 @@ public class Message implements Parcelable {
      */
     public String getPublisherId() {
         return bundle.getString(PUBLISHER_ID);
+    }
+
+    /** 브로커가 발행한 앱의 패키지명을 넣는다(OSSA 5.1.6 source ID). 앱이 bundle에 넣은 값은 덮어쓴다 */
+    void setPublisherId(String publisherId) {
+        bundle.putString(PUBLISHER_ID, publisherId);
     }
 
     /**
